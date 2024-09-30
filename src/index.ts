@@ -5,7 +5,7 @@ export const handler = async (
 ): Promise<APIGatewayProxyResult> => {
   const response = {
     statusCode: 200,
-    body: JSON.stringify("Hello from Lambda!"),
+    body: JSON.stringify("Cheers from Lambda World! this is @heftamayo"),
   };
   return response;
 };

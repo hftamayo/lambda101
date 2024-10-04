@@ -83,10 +83,10 @@ Resources:
               OutputArtifacts:
                 - Name: 'SourceOutput'
               Configuration:
-                Owner: 'my-github-username'
-                Repo: 'my-lambda-project'
-                Branch: 'main'
-                OAuthToken: 'my-github-oauth-token'
+                Owner: 'hftamayo'
+                Repo: 'lambda101'
+                Branch: 'unstable'
+                OAuthToken: '{{resolve:secretsmanager:my-github-token:SecretString:token}}'
         - Name: 'Build'
           Actions:
             - Name: 'Build'

@@ -1,10 +1,9 @@
 {
   "name": "nodelambdas101",
   "version": "1.0.0",
-  "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "lerna run build",
+    "test": "lerna run test"
   },
   "keywords": [],
   "author": "",
@@ -13,6 +12,7 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.145",
     "@types/node": "^22.7.4",
+    "lerna": "^8.1.8",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.2"
   }

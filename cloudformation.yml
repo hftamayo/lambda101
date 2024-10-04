@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  S3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: lambdas101-bucket
+
+  CodeBuildRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service: 'codebuild.amazonaws.com'
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: 'CodeBuildPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                Resource: 'arn:aws:s3:::lambdas101-bucket/*'
+
+  CodeBuildProject:
+    Type: 'AWS::CodeBuild::Project'
+    Properties:
+      Name: 'lambdas101Project'
+      Source:
+        Type: 'GITHUB'
+        Location: 'https://github.com/hftamayo/lambda101.git'
+      Artifacts:
+        Type: 'S3'
+        Location: !Ref S3Bucket
+      Environment:
+        ComputeType: 'BUILD_GENERAL1_SMALL'
+        Image: 'aws/codebuild/standard:4.0'
+        Type: 'LINUX_CONTAINER'
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+
+  CodePipelineRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service: 'codepipeline.amazonaws.com'
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: 'CodePipelinePolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                Resource: 'arn:aws:s3:::lambdas101-bucket/*'
+
+  CodePipeline:
+    Type: 'AWS::CodePipeline::Pipeline'
+    Properties:
+      Name: 'MyLambdaPipeline'
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      ArtifactStore:
+        Type: 'S3'
+        Location: !Ref S3Bucket
+      Stages:
+        - Name: 'Source'
+          Actions:
+            - Name: 'Source'
+              ActionTypeId:
+                Category: 'Source'
+                Owner: 'ThirdParty'
+                Provider: 'GitHub'
+                Version: '1'
+              OutputArtifacts:
+                - Name: 'SourceOutput'
+              Configuration:
+                Owner: 'my-github-username'
+                Repo: 'my-lambda-project'
+                Branch: 'main'
+                OAuthToken: 'my-github-oauth-token'
+        - Name: 'Build'
+          Actions:
+            - Name: 'Build'
+              ActionTypeId:
+                Category: 'Build'
+                Owner: 'AWS'
+                Provider: 'CodeBuild'
+                Version: '1'
+              InputArtifacts:
+                - Name: 'SourceOutput'
+              OutputArtifacts:
+                - Name: 'BuildOutput'
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+        - Name: 'Deploy'
+          Actions:
+            - Name: 'Deploy'
+              ActionTypeId:
+                Category: 'Deploy'
+                Owner: 'AWS'
+                Provider: 'Lambda'
+                Version: '1'
+              InputArtifacts:
+                - Name: 'BuildOutput'
+              Configuration:
+                FunctionName: 'my-lambda-function'
+                S3Bucket: !Ref S3Bucket
+                S3Key: 'build-output.zip'
